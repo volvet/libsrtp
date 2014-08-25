@@ -1,32 +1,33 @@
 /*
- * env.c
+ * aes_icm.h
  *
- * prints out a brief report on the build environment
+ * Header for AES Integer Counter Mode.
  *
- * David McGrew
+ * David A. McGrew
  * Cisco Systems, Inc.
+ *
  */
 /*
- *	
- * Copyright (c) 2001-2006 Cisco Systems, Inc.
+ *
+ * Copyright (c) 2001-2005,2012, Cisco Systems, Inc.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  *   Redistributions of source code must retain the above copyright
  *   notice, this list of conditions and the following disclaimer.
- * 
+ *
  *   Redistributions in binary form must reproduce the above
  *   copyright notice, this list of conditions and the following
  *   disclaimer in the documentation and/or other materials provided
  *   with the distribution.
- * 
+ *
  *   Neither the name of the Cisco Systems, Inc. nor the names of its
  *   contributors may be used to endorse or promote products derived
  *   from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -42,60 +43,31 @@
  *
  */
 
-#include <stdio.h>
-#include <string.h>     /* for srtcmp() */
-#include "config.h"
+#ifndef AES_ICM_H
+#define AES_ICM_H
 
-int 
-main(void) {
-  int err_count = 0;
-  char *str;
+#include "cipher.h"
+#include <openssl/evp.h>
+#include <openssl/aes.h>
 
-#ifdef WORDS_BIGENDIAN
-  printf("CPU set to big-endian\t\t\t(WORDS_BIGENDIAN == 1)\n");
-#else
-  printf("CPU set to little-endian\t\t(WORDS_BIGENDIAN == 0)\n");
-#endif
+#define     SALT_SIZE               14
+#define     AES_128_KEYSIZE         AES_BLOCK_SIZE
+#define     AES_192_KEYSIZE         AES_BLOCK_SIZE + AES_BLOCK_SIZE / 2
+#define     AES_256_KEYSIZE         AES_BLOCK_SIZE * 2
+#define     AES_128_KEYSIZE_WSALT   AES_128_KEYSIZE + SALT_SIZE
+#define     AES_192_KEYSIZE_WSALT   AES_192_KEYSIZE + SALT_SIZE
+#define     AES_256_KEYSIZE_WSALT   AES_256_KEYSIZE + SALT_SIZE
 
-#ifdef CPU_RISC
-  printf("CPU set to RISC\t\t\t\t(CPU_RISC == 1)\n");
-#elif defined(CPU_CISC)
-  printf("CPU set to CISC\t\t\t\t(CPU_CISC == 1)\n");
-#else
-  printf("CPU set to an unknown type, probably due to a configuration error\n");
-  err_count++;
-#endif
+typedef struct {
+    v128_t counter;                /* holds the counter value          */
+    v128_t offset;                 /* initial offset value             */
+    v256_t key;
+    int key_size;
+    EVP_CIPHER_CTX ctx;
+} aes_icm_ctx_t;
 
-#ifdef CPU_ALTIVEC
-  printf("CPU set to ALTIVEC\t\t\t\t(CPU_ALTIVEC == 0)\n");
-#endif
+err_status_t aes_icm_openssl_set_iv(aes_icm_ctx_t *c, void *iv, int dir);
 
-#ifndef NO_64BIT_MATH
-  printf("using native 64-bit type\t\t(NO_64_BIT_MATH == 0)\n");
-#else
-  printf("using built-in 64-bit math\t\t(NO_64_BIT_MATH == 1)\n");
-#endif
 
-#ifdef ERR_REPORTING_STDOUT
-  printf("using stdout for error reporting\t(ERR_REPORTING_STDOUT == 1)\n");
-#endif
+#endif /* AES_ICM_H */
 
-#ifndef OPENSSL
-#ifdef DEV_URANDOM
-  str = DEV_URANDOM;
-#else
-  str = "";
-#endif
-  printf("using %s as a random source\t(DEV_URANDOM == %s)\n",
-	 str, str);
-  if (strcmp("", str) == 0) {
-    err_count++;
-  }
-#endif
-  
-  if (err_count)
-    printf("warning: configuration is probably in error "
-	   "(found %d problems)\n", err_count);
-
-  return err_count;
-}

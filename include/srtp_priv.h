@@ -88,7 +88,7 @@ typedef struct {
   unsigned char x:1;	/* header extension flag  */
   unsigned char cc:4;	/* CSRC count             */
   unsigned char m:1;	/* marker bit             */
-  unsigned pt:7;	/* payload type           */
+  unsigned char pt:7;	/* payload type           */
   uint16_t seq;		/* sequence number        */
   uint32_t ts;		/* timestamp              */
   uint32_t ssrc;	/* synchronization source */
@@ -220,6 +220,8 @@ typedef struct srtp_stream_ctx_t {
   direction_t direction;
   int        allow_repeat_tx;
   ekt_stream_t ekt; 
+  uint8_t    salt[SRTP_AEAD_SALT_LEN];   /* used with GCM mode for SRTP */
+  uint8_t    c_salt[SRTP_AEAD_SALT_LEN]; /* used with GCM mode for SRTCP */
   struct srtp_stream_ctx_t *next;   /* linked list of streams */
 } srtp_stream_ctx_t;
 
